@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //mport model.LineState.cacheSlotState;
+import model.LineState.cacheSlotState;
 import model.Request.cmd_t;
 
 /**
@@ -220,78 +221,96 @@ public class L1WtiController extends L1Controller {
 	public void simulate1Cycle() {
 		LineState state = new LineState();
 		List<Long> data = new ArrayList<Long>();
-		
+
 		switch (r_fsm_state) {
-		
+
 		case FSM_IDLE:
-			if (p_in_req.empty(this)) {
-				break;
+			if (!p_in_req.empty(this)) {
+
+				getRequest();
+
+				if(m_req.getCmd() == cmd_t.INVAL){
+					r_fsm_state = FsmState.FSM_INVAL;
+					r_fsm_prev_state = FsmState.FSM_IDLE;
+					break;
+				}
+				/* If i'm still here I have no request from mem*/
+				/* The proc's turn now*/
+
+
 			}
-			getRequest();
-			
-			if(m_req.getCmd() == cmd_t.INVAL){
-				r_fsm_state = FsmState.FSM_INVAL;
-				r_fsm_prev_state = FsmState.FSM_IDLE;
-				break;
-			}
-			/* If i'm still here I have no request from mem*/
-			/* The proc's turn now*/
-			
+
+			System.out.println("Mem: J'ai rien");
+
 			if (p_in_iss_req.empty(this)) {
+				System.out.println("Proc: J'ai rien non plus Bye!");
 				break;
 			}
-			
+
 			getIssRequest();
 
 			if(m_iss_req.getCmd() == cmd_t.READ_WORD){
+				
+				System.out.println("Je read words");
+				
 				if(m_cache_l1.read(m_iss_req.getAddress(), data, state)){
-					sendIssResponse(m_iss_req.getAddress(), cmd_t.RSP_READ_WORD, data.get(0));
+					System.out.println("HIT");
+					if( state.state == cacheSlotState.VALID){
+						sendIssResponse(m_iss_req.getAddress(), cmd_t.RSP_READ_WORD, data.get(0));
+					}else if (state.state == cacheSlotState.ZOMBI){
+						r_fsm_state=FsmState.FSM_MISS;
+						System.out.println("MISS");
+					}
 					break;
 				}else{
 					r_fsm_state=FsmState.FSM_MISS;
+					System.out.println("MISS");
 					break;
 				}
 			}
 
 			if(m_iss_req.getCmd() == cmd_t.WRITE_WORD){
 				r_fsm_state = FsmState.FSM_SEND_WRITE;
+				System.out.println("WRITE");
 				break;
 			}
 
 			/*Finished processing proc request */
-			
+
 			break;
-			
+
 		case FSM_INVAL:
 			assert(r_fsm_state == FsmState.FSM_INVAL);
 			m_cache_l1.inval(m_req.getAddress(), true);
-			r_fsm_state = r_fsm_prev_state; /* I'm hella clever #FutureProof */
+			r_fsm_state = r_fsm_prev_state; 
 			break;
-			
+
 		case FSM_MISS:
-			sendRequest(m_iss_req.getAddress(),cmd_t.READ_LINE,data);
+			System.out.println("IN_MISS");
+			sendRequest(m_iss_req.getAddress(),cmd_t.READ_LINE, m_iss_req.getData());
 			r_fsm_state = FsmState.FSM_MISS_WAIT;
 			break;
-		
-		case FSM_SEND_WRITE:		
-			sendRequest(m_iss_req.getAddress(), cmd_t.WRITE_WORD,m_iss_req.getData().get(0), m_iss_req.getBe());
+
+		case FSM_SEND_WRITE:
+			sendRequest(m_iss_req.getAddress(), cmd_t.WRITE_WORD, m_iss_req.getData().get(0), m_iss_req.getBe());
 			r_fsm_state = FsmState.FSM_IDLE;
 			break;
-			
+
 		case FSM_MISS_WAIT:
+			System.out.println("IN_MISS_WAIT");
 			if (r_rsp_miss_ok){
-				m_cache_l1.writeLine(m_iss_req.getAddress(), m_iss_req.getData(), true);
+				m_cache_l1.writeLine(m_iss_req.getAddress(), m_iss_req.getData(), false);
 				r_fsm_state = FsmState.FSM_IDLE;
 			}
 			break;
-			
+
 		default:
 			assert (false);
 			break;
 		} // end switch(r_fsm_state)
-		
+
 		System.out.println(m_name + " next state: " + r_fsm_state);
-		
+
 		// Following code equivalent to a 1-state FSM executing in parallel
 		// which is in charge of consuming the responses on the p_in_rsp_port (r_fsm_rsp)
 		// and updating synchronization registers
@@ -310,12 +329,12 @@ public class L1WtiController extends L1Controller {
 		}
 		m_cycle++;
 	}
-	
+
 
 	public int getSrcid() {
 		return r_srcid;
 	}
-	
+
 
 	public String getName() {
 		return m_name;
