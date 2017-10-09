@@ -299,7 +299,8 @@ public class L1WtiController extends L1Controller {
 		case FSM_MISS_WAIT:
 			System.out.println("IN_MISS_WAIT");
 			if (r_rsp_miss_ok){
-				m_cache_l1.writeLine(m_iss_req.getAddress(), m_iss_req.getData(), false);
+				System.out.println("i");
+				//m_cache_l1.writeLine(m_req.getAddress(), m_req.getData(), false);
 				r_fsm_state = FsmState.FSM_IDLE;
 			}
 			break;
