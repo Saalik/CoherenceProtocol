@@ -281,7 +281,15 @@ public class L1WtiController extends L1Controller {
 
 		case FSM_INVAL:
 			assert(r_fsm_state == FsmState.FSM_INVAL);
-			m_cache_l1.inval(m_req.getAddress(), true);
+			CacheAccessResult res = m_cache_l1.inval(m_req.getAddress(), true);
+			if (res.victimDirty) {
+				System.out.println("muh dirty L1 cache invalidation");
+				sendResponse(m_req.getAddress(), m_req.getSrcid(), cmd_t.RSP_INVAL_DIRTY, m_req.getData());
+			}
+			else {
+				System.out.println("muh clean L1 cache invalidation");
+				sendResponse(m_req.getAddress(), m_req.getSrcid(), cmd_t.RSP_INVAL_CLEAN, m_req.getData());
+			}
 			r_fsm_state = r_fsm_prev_state; 
 			break;
 
@@ -292,7 +300,9 @@ public class L1WtiController extends L1Controller {
 			break;
 
 		case FSM_SEND_WRITE:
+			System.out.println("in send write");
 			sendRequest(m_iss_req.getAddress(), cmd_t.WRITE_WORD, m_iss_req.getData().get(0), m_iss_req.getBe());
+			sendIssResponse(m_iss_req.getAddress(), cmd_t.RSP_WRITE_WORD, m_iss_req.getData().get(0));
 			r_fsm_state = FsmState.FSM_IDLE;
 			break;
 
@@ -300,7 +310,7 @@ public class L1WtiController extends L1Controller {
 			System.out.println("IN_MISS_WAIT");
 			if (r_rsp_miss_ok){
 				System.out.println("i");
-				//m_cache_l1.writeLine(m_req.getAddress(), m_req.getData(), false);
+				m_cache_l1.writeLine(m_rsp.getAddress(), m_rsp.getData(), false);
 				r_fsm_state = FsmState.FSM_IDLE;
 			}
 			break;
