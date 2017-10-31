@@ -339,6 +339,7 @@ public class MemMesiController implements MemController {
 			else if (m_req.getCmd() == cmd_t.WRITE_LINE) {
 				// Write back operation initiated by the processor
 				m_ram.removeAllCopies(m_req.getAddress());
+				m_ram.setState(m_req.getAddress(), BlockState.VALID);
 				r_fsm_state = FsmState.FSM_IDLE;
 			}
 			else {
