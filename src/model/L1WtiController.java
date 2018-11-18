@@ -240,10 +240,10 @@ public class L1WtiController extends L1Controller {
 
 			}
 
-			System.out.println("Mem: J'ai rien");
+			//System.out.println("Mem: J'ai rien");
 
 			if (p_in_iss_req.empty(this)) {
-				System.out.println("Proc: J'ai rien non plus Bye!");
+				//System.out.println("Proc: J'ai rien non plus Bye!");
 				break;
 			}
 
@@ -251,7 +251,7 @@ public class L1WtiController extends L1Controller {
 
 			if(m_iss_req.getCmd() == cmd_t.READ_WORD){
 				
-				System.out.println("Je read words");
+				//System.out.println("Je read words");
 				
 				if(m_cache_l1.read(m_iss_req.getAddress(), data, state)){
 					System.out.println("HIT");
@@ -283,11 +283,11 @@ public class L1WtiController extends L1Controller {
 			assert(r_fsm_state == FsmState.FSM_INVAL);
 			CacheAccessResult res = m_cache_l1.inval(m_req.getAddress(), true);
 			if (res.victimDirty) {
-				System.out.println("muh dirty L1 cache invalidation");
+				//System.out.println("muh dirty L1 cache invalidation");
 				sendResponse(m_req.getAddress(), m_req.getSrcid(), cmd_t.RSP_INVAL_DIRTY, m_req.getData());
 			}
 			else {
-				System.out.println("muh clean L1 cache invalidation");
+				//System.out.println("muh clean L1 cache invalidation");
 				sendResponse(m_req.getAddress(), m_req.getSrcid(), cmd_t.RSP_INVAL_CLEAN, m_req.getData());
 			}
 			r_fsm_state = r_fsm_prev_state; 
@@ -300,7 +300,7 @@ public class L1WtiController extends L1Controller {
 			break;
 
 		case FSM_SEND_WRITE:
-			System.out.println("in send write");
+			//System.out.println("in send write");
 			sendRequest(m_iss_req.getAddress(), cmd_t.WRITE_WORD, m_iss_req.getData().get(0), m_iss_req.getBe());
 			sendIssResponse(m_iss_req.getAddress(), cmd_t.RSP_WRITE_WORD, m_iss_req.getData().get(0));
 			r_fsm_state = FsmState.FSM_IDLE;
